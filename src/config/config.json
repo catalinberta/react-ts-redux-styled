@@ -1,0 +1,8 @@
+{
+	"DEV": {
+		"BASE_URL": "https://api.raisely.com/v3/"
+	},
+	"PRODUCTION": {
+		"BASE_URL": "https://api.raisely.com/v3/"
+	}
+}
