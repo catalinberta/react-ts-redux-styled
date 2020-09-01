@@ -1,72 +1,49 @@
-import React, {useState} from 'react';
+import React from 'react';
 import Avatar from '@material-ui/core/Avatar';
 import Button from '@material-ui/core/Button';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
 import Container from '@material-ui/core/Container';
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers';
+import styled from 'styled-components';
+import { connect } from 'react-redux';
 import InputField from '../../components/InputField';
-import {useForm} from "react-hook-form";
-import {yupResolver} from "@hookform/resolvers";
-import schema from "./schema";
-import useStyles from "./style";
-import {InputAdornment} from "@material-ui/core";
-import CircularProgress from '@material-ui/core/CircularProgress';
-import CheckIcon from '@material-ui/icons/Check';
-import API from "../../services/API";
+import schema from './schema';
+import useStyles from './makeStyles';
+import { RootState } from '../../store/store';
+import { AppThunkDispatch } from '../../types.d';
+import { MapStateToProps, RegisterProps } from './types';
+import { register as registerAction } from '../../store/user/actions';
+import { RegisterRequestModel } from '../../store/user/types';
 
-const Register = () => {
-	const [showCheckingEmail, setShowCheckingEmail] = useState(false);
-	const [showEmailVerified, setShowEmailVerified] = useState(false);
+const Register = (props: RegisterProps) => {
 	const classes = useStyles();
-	const { handleSubmit, register, errors, getValues, setError, clearErrors } = useForm({
+	const { handleSubmit, register, errors } = useForm({
 		resolver: yupResolver(schema),
-		mode: 'onChange'
+		mode: 'onTouched'
 	});
 
-	const onEmailChange = async () => {
-		if(!errors.email) {
-			setShowCheckingEmail(true);
-			setShowEmailVerified(false);
-			const checkResponse = await API.post('/check-user', {
-					campaignUuid: "46aa3270-d2ee-11ea-a9f0-e9a68ccff42a",
-					data: {
-						email: getValues("email")
-					}
-				},
-				{
-					requestId: 'email'
-				});
-			setShowCheckingEmail(false);
-			if(checkResponse.data.data.status === 'EXISTS') {
-				setError(
-					'email', {
-						type: 'email',
-						message: "E-mail is already in use."
-					});
-			} else if(checkResponse.data.data.status === 'OK') {
-				clearErrors('email');
-				setShowEmailVerified(true);
-			}
-		}
-	};
-
 	const onSubmit = () => {
-		console.log('Success');
+		props.register({
+			email: ''
+		});
 	};
 
 	return (
-		<Container component="main" maxWidth="xs">
-			<CssBaseline />
-			<div className={classes.paper}>
-				<Avatar className={classes.avatar} component='div' />
-				<Typography component="h1" variant="h5">
-					Sign up
-				</Typography>
-				<br/>
-				<form className="row" onSubmit={handleSubmit(onSubmit)}>
-						<Grid container spacing={2} component='div'>
-							<Grid item xs={12} sm={6} component='div'>
+		<RegisterWrapper>
+			<Container component="main" maxWidth="xs">
+				<CssBaseline />
+				<div className={`${classes.paper} registerScreen`}>
+					<Avatar className={classes.avatar} component="div" />
+					<Typography component="h1" variant="h5">
+						Sign up
+					</Typography>
+					<br />
+					<form className="row" onSubmit={handleSubmit(onSubmit)}>
+						<Grid container spacing={2} component="div">
+							<Grid item xs={12} sm={6} component="div">
 								<InputField
 									autoComplete="firstName"
 									name="firstName"
@@ -78,7 +55,7 @@ const Register = () => {
 									inputRef={register()}
 								/>
 							</Grid>
-							<Grid item xs={12} sm={6} component='div'>
+							<Grid item xs={12} sm={6} component="div">
 								<InputField
 									autoComplete="lastName"
 									name="lastName"
@@ -89,27 +66,18 @@ const Register = () => {
 									inputRef={register()}
 								/>
 							</Grid>
-							<Grid item xs={12} component='div'>
+							<Grid item xs={12} component="div">
 								<InputField
 									autoComplete="email"
 									id="email"
 									label="Email Address"
 									name="email"
-									onChange={onEmailChange}
 									error={!!errors.email}
 									helperText={errors.email?.message}
 									inputRef={register()}
-									InputProps={{
-										endAdornment: (
-											<InputAdornment position="end" component='div'>
-												{ showCheckingEmail && <CircularProgress color="primary" size={20}/> }
-												{ showEmailVerified && <CheckIcon component="svg" color="primary"/> }
-											</InputAdornment>
-										),
-									}}
 								/>
 							</Grid>
-							<Grid item xs={12} component='div'>
+							<Grid item xs={12} component="div">
 								<InputField
 									autoComplete="password"
 									name="password"
@@ -128,15 +96,29 @@ const Register = () => {
 							variant="contained"
 							color="primary"
 							className={classes.submit}
-							href=''
-							disabled={!!Object.keys(errors).length || showCheckingEmail}
+							href=""
+							disabled={!!Object.keys(errors).length}
 						>
 							Sign Up
 						</Button>
 					</form>
-			</div>
-		</Container>
+				</div>
+			</Container>
+		</RegisterWrapper>
 	);
 };
 
-export default Register;
+const RegisterWrapper = styled.div`
+	padding: 20px;
+`;
+
+const mapStateToProps = (state: RootState): MapStateToProps => ({
+	user: state.user
+});
+
+const mapDispatchToProps = (dispatch: AppThunkDispatch) => ({
+	register: (userObj: RegisterRequestModel): void =>
+		dispatch(registerAction(userObj))
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(Register);

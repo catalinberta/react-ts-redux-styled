@@ -1,3 +1,5 @@
-export enum RoutePaths {
+enum RoutePaths {
 	Register = '/register'
 }
+
+export default RoutePaths;
